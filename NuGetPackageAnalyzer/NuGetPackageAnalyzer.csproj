@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+        <PackAsTool>true</PackAsTool>
+        <Version>0.1.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.21216.1" />
+    </ItemGroup>
+
+</Project>
