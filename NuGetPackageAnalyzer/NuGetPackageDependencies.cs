@@ -34,6 +34,17 @@ namespace NuGetPackageAnalyzer
             else
                 dependency.VersionRange.Include(nuGetPackageVersion);
         }
+        public void AddProjectReference(string project, string referencedProject)
+        {
+            if (_projectDependencies.TryGetValue(referencedProject, out var referencedDependencies))
+            {
+                foreach (var dependency in referencedDependencies.Values)
+                {
+                    AddDependency(project, dependency.Name, dependency.VersionRange.Min);
+                    AddDependency(project, dependency.Name, dependency.VersionRange.Max);
+                }
+            }
+        }
         public IEnumerable<ProjectNuGetReference> GetBindingRedirects()
         {
             foreach (var projectDependency in _projectDependencies)

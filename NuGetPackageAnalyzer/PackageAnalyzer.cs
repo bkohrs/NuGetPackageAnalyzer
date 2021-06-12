@@ -30,10 +30,14 @@ namespace NuGetPackageAnalyzer
             var packageDependencies = new NuGetPackageDependencies();
             var projects = Directory.GetFiles(directory, "*.csproj", SearchOption.AllDirectories);
             foreach (var project in projects)
+            {
                 if (IsSdkProject(project))
                     GetSdkDependencies(project, framework, packageDependencies);
                 else
                     GetNonSdkDependencies(directory, project, framework, packageDependencies);
+            }
+            foreach (var project in projects)
+                LinkProjectReferences(project, packageDependencies);
 
             return packageDependencies;
         }
@@ -206,6 +210,19 @@ namespace NuGetPackageAnalyzer
             var projectNode = document.DocumentElement;
             var sdk = projectNode?.Attributes["Sdk"];
             return sdk != null;
+        }
+        private static void LinkProjectReferences(string project, NuGetPackageDependencies packageDependencies)
+        {
+            var xmlDocument = new XmlDocument();
+            xmlDocument.Load(project);
+            var references = xmlDocument.SelectNodes("//*[local-name()='ProjectReference']")?.OfType<XmlElement>() ??
+                             Enumerable.Empty<XmlElement>();
+            foreach (var reference in references)
+            {
+                var referencedProject =
+                    Path.GetFullPath(Path.Combine(Path.GetDirectoryName(project) ?? string.Empty, reference.GetAttribute("Include")));
+                packageDependencies.AddProjectReference(project, referencedProject);
+            }
         }
         private static void WriteProjectIssues(IConsole console, IList<ProjectIssue> projectIssues)
         {
