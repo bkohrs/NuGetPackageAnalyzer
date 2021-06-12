@@ -4,6 +4,8 @@
     {
         MissingPackagesConfig,
         MissingAssetsJson,
-        InvalidVersion
+        InvalidVersion,
+        MissingNuGetPackage,
+        MissingNuSpecFile,
     }
 }

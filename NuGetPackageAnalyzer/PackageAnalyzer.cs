@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.IO;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Xml;
 using Newtonsoft.Json.Linq;
+using NuGet.Frameworks;
 
 namespace NuGetPackageAnalyzer
 {
@@ -18,6 +20,8 @@ namespace NuGetPackageAnalyzer
                 AnalysisIssue.MissingPackagesConfig => "The following projects do not have a packages.config file and were skipped",
                 AnalysisIssue.MissingAssetsJson => "The following projects do not have a project.assets.json file and were skipped",
                 AnalysisIssue.InvalidVersion => "The following projects had an invalid version and that dependency was skipped",
+                AnalysisIssue.MissingNuGetPackage => "The following projects had missing NuGet package and its dependencies were skipped",
+                AnalysisIssue.MissingNuSpecFile => "The following projects did not have a .nuspec file in the NuGet package and its dependencies were skipped",
                 _ => throw new ArgumentOutOfRangeException(nameof(issue), issue, null)
             };
         }
@@ -29,7 +33,7 @@ namespace NuGetPackageAnalyzer
                 if (IsSdkProject(project))
                     GetSdkDependencies(project, framework, packageDependencies);
                 else
-                    GetNonSdkDependencies(project, packageDependencies);
+                    GetNonSdkDependencies(directory, project, framework, packageDependencies);
 
             return packageDependencies;
         }
@@ -54,8 +58,10 @@ namespace NuGetPackageAnalyzer
             else
                 console.Out.WriteLine("No needed binding redirects found.");
         }
-        private static void GetNonSdkDependencies(string project, NuGetPackageDependencies dependencies)
+        private static void GetNonSdkDependencies(string directory, string project, string framework, NuGetPackageDependencies dependencies)
         {
+            var targetFramework = NuGetFramework.Parse(framework);
+            var frameworkReducer = new FrameworkReducer();
             var packagesConfig = Path.Combine(Path.GetDirectoryName(project) ?? string.Empty, "packages.config");
             if (File.Exists(packagesConfig))
             {
@@ -71,6 +77,43 @@ namespace NuGetPackageAnalyzer
                         dependencies.AddDependency(project, name, version);
                     else
                         dependencies.AddIssue(project, AnalysisIssue.InvalidVersion, $"{name}:{versionText}");
+                    var nuGetPackage = Path.Combine(directory, @$"packages\{name}.{versionText}\{name}.{versionText}.nupkg");
+                    if (File.Exists(nuGetPackage))
+                    {
+                        using var zipFile = ZipFile.OpenRead(nuGetPackage);
+                        var nuspec = zipFile.GetEntry($"{name}.nuspec");
+                        if (nuspec != null)
+                        {
+                            using var reader = new StreamReader(nuspec.Open());
+                            var content = reader.ReadToEnd();
+                            var xmlDocument = new XmlDocument();
+                            xmlDocument.LoadXml(content);
+                            var groups =
+                                (xmlDocument.SelectNodes("//*[local-name()='dependencies']/*[local-name()='group']")
+                                    ?.OfType<XmlElement>() ?? Enumerable.Empty<XmlElement>()).ToList();
+                            var frameworks = groups.Select(g => NuGetFramework.Parse(g.Attributes["targetFramework"]?.Value)).ToList();
+                            var effectiveFramework = frameworkReducer.GetNearest(targetFramework, frameworks);
+                            var effectiveGroup = groups.FirstOrDefault(r =>
+                                NuGetFramework.Parse(r.Attributes["targetFramework"]?.Value) == effectiveFramework);
+                            var referenceDependencies =
+                                effectiveGroup?.SelectNodes("*[local-name()='dependency']")?.OfType<XmlElement>() ??
+                                Enumerable.Empty<XmlElement>();
+                            foreach (var referenceDependency in referenceDependencies)
+                            {
+                                var referenceDependencyName = referenceDependency.GetAttribute("id");
+                                var referenceDependencyVersionText = referenceDependency.GetAttribute("version");
+                                if (Version.TryParse(referenceDependencyVersionText, out var referenceDependencyVersion))
+                                    dependencies.AddDependency(project, referenceDependencyName, referenceDependencyVersion);
+                                else
+                                    dependencies.AddIssue(project, AnalysisIssue.InvalidVersion,
+                                        $"{referenceDependencyName}:{referenceDependencyVersionText}");
+                            }
+                        }
+                        else
+                            dependencies.AddIssue(project, AnalysisIssue.MissingNuSpecFile, $"{name}:{versionText}");
+                    }
+                    else
+                        dependencies.AddIssue(project, AnalysisIssue.MissingNuGetPackage, $"{name}:{versionText}");
                 }
             }
             else
