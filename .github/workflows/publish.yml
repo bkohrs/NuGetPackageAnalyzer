@@ -20,4 +20,4 @@ jobs:
       - name: Create the package
         run: dotnet pack --configuration Release
       - name: Publish the package to GPR
-        run: dotnet nuget push NuGetPackageAnalyzer/bin/Release/*.nupkg
+        run: dotnet nuget push NuGetPackageAnalyzer/bin/Release/*.nupkg -s https://api.nuget.org/v3/index.json
