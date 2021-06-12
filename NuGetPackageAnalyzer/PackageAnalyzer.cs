@@ -17,6 +17,7 @@ namespace NuGetPackageAnalyzer
             {
                 AnalysisIssue.MissingPackagesConfig => "The following projects do not have a packages.config file and were skipped",
                 AnalysisIssue.MissingAssetsJson => "The following projects do not have a project.assets.json file and were skipped",
+                AnalysisIssue.InvalidVersion => "The following projects had an invalid version and that dependency was skipped",
                 _ => throw new ArgumentOutOfRangeException(nameof(issue), issue, null)
             };
         }
@@ -63,8 +64,14 @@ namespace NuGetPackageAnalyzer
                 var packages = document.SelectNodes("//package")?.OfType<XmlElement>() ??
                                Enumerable.Empty<XmlElement>();
                 foreach (var package in packages)
-                    dependencies.AddDependency(project, package.GetAttribute("id"),
-                        Version.Parse(package.GetAttribute("version")));
+                {
+                    var name = package.GetAttribute("id");
+                    var versionText = package.GetAttribute("version");
+                    if (Version.TryParse(versionText, out var version))
+                        dependencies.AddDependency(project, name, version);
+                    else
+                        dependencies.AddIssue(project, AnalysisIssue.InvalidVersion, $"{name}:{versionText}");
+                }
             }
             else
             {
@@ -124,13 +131,24 @@ namespace NuGetPackageAnalyzer
                                  Enumerable.Empty<JProperty>();
                 foreach (var r in references)
                 {
-                    var (name, version, _) = r.Name.Split("/");
-                    dependencies.AddDependency(project, name, Version.Parse(version));
+                    var (name, versionText, _) = r.Name.Split("/");
+                    if (Version.TryParse(versionText, out var version))
+                        dependencies.AddDependency(project, name, version);
+                    else
+                        dependencies.AddIssue(project, AnalysisIssue.InvalidVersion, $"{name}:{versionText}");
                     var referenceDependencies =
                         r.Value["dependencies"]?.OfType<JProperty>() ?? Enumerable.Empty<JProperty>();
                     foreach (var referenceDependency in referenceDependencies)
-                        dependencies.AddDependency(project, referenceDependency.Name,
-                            Version.Parse(referenceDependency.Value.ToString()));
+                    {
+                        var referenceVersionText = referenceDependency.Value.ToString();
+                        if (Version.TryParse(referenceVersionText, out var referenceVersion))
+                            dependencies.AddDependency(project, referenceDependency.Name, referenceVersion);
+                        else
+                        {
+                            dependencies.AddIssue(project, AnalysisIssue.InvalidVersion,
+                                $"{referenceDependency.Name}:{referenceVersionText}");
+                        }
+                    }
                 }
             }
             else
@@ -154,7 +172,8 @@ namespace NuGetPackageAnalyzer
                 {
                     console.Out.WriteLine(AnalysisIssueDescription(issuesByType.Key));
                     foreach (var project in issuesByType.OrderBy(r => r.Name))
-                        console.Out.WriteLine($"  {project.Name}");
+                        console.Out.WriteLine(
+                            $"  {project.Name}{(!string.IsNullOrWhiteSpace(project.AdditionalDetails) ? $" ({project.AdditionalDetails})" : "")}");
                 }
 
                 console.Out.WriteLine();

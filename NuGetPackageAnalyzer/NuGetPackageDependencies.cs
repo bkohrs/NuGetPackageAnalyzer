@@ -22,9 +22,9 @@ namespace NuGetPackageAnalyzer
 
             AddProjectDependency(dependencies, nuGetPackageName, nuGetPackageVersion);
         }
-        public void AddIssue(string project, AnalysisIssue issue)
+        public void AddIssue(string project, AnalysisIssue issue, string additionalDetails = null)
         {
-            _projectIssues.Add(new ProjectIssue(project, issue));
+            _projectIssues.Add(new ProjectIssue(project, issue, additionalDetails));
         }
         private void AddProjectDependency(Dictionary<string, NuGetDependency> dependencies, string nuGetPackageName,
             Version nuGetPackageVersion)

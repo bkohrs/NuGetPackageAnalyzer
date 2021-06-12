@@ -3,6 +3,7 @@
     public enum AnalysisIssue
     {
         MissingPackagesConfig,
-        MissingAssetsJson
+        MissingAssetsJson,
+        InvalidVersion
     }
 }
