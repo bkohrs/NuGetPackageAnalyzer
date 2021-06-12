@@ -71,6 +71,27 @@ namespace NuGetPackageAnalyzer
                 dependencies.AddIssue(project, AnalysisIssue.MissingPackagesConfig);
             }
         }
+        public static void GetPackageDependencies(string directory, string framework, IConsole console)
+        {
+            var packageDependencies = AnalyzePackageDependencies(directory, framework);
+            WriteProjectIssues(console, packageDependencies.GetProjectIssues().ToList());
+            var packageUpgrades = packageDependencies.GetPackageDependencies().ToList();
+            if (packageUpgrades.Count > 0)
+            {
+                console.Out.WriteLine("The following project dependencies were identified:");
+                foreach (var byProject in packageUpgrades.GroupBy(r => r.ProjectName).OrderBy(r=> r.Key))
+                {
+                    console.Out.WriteLine($"  {Path.GetFileNameWithoutExtension(byProject.Key)}");
+                    foreach (var packageUpgrade in byProject.OrderBy(r => r.NuGetPackageName))
+                    {
+                        console.Out.WriteLine(
+                            $"    {packageUpgrade.NuGetPackageName} => {packageUpgrade.NuGetPackageVersion}");
+                    }
+                }
+            }
+            else
+                console.Out.WriteLine("No needed upgrades found.");
+        }
         public static void GetPackageUpgrades(string directory, string framework, IConsole console)
         {
             var packageDependencies = AnalyzePackageDependencies(directory, framework);

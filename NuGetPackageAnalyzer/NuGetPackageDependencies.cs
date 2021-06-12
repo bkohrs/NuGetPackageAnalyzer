@@ -48,6 +48,17 @@ namespace NuGetPackageAnalyzer
                 }
             }
         }
+        public IEnumerable<ProjectNuGetReference> GetPackageDependencies()
+        {
+            foreach (var projectDependency in _projectDependencies)
+            {
+                foreach (var dependency in projectDependency.Value.Values)
+                {
+                    yield return new ProjectNuGetReference(projectDependency.Key, dependency.Name,
+                        dependency.VersionRange.Max);
+                }
+            }
+        }
         public IEnumerable<ProjectNuGetReference> GetPackageUpgrades()
         {
             foreach (var projectDependency in _projectDependencies)

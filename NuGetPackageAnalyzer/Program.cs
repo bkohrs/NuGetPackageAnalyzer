@@ -16,6 +16,16 @@ namespace NuGetPackageAnalyzer
             command.Handler = CommandHandler.Create<string, string, IConsole>(PackageAnalyzer.GetBindingRedirects);
             return command;
         }
+        private static Command CreateDependenciesCommand()
+        {
+            var command = new Command("dependencies", "Get a list of project dependencies.")
+            {
+                new Argument<string>("directory", "Directory containing the projects"),
+                new Argument<string>("framework", ".NET Framework version to analyze")
+            };
+            command.Handler = CommandHandler.Create<string, string, IConsole>(PackageAnalyzer.GetPackageDependencies);
+            return command;
+        }
         private static Command CreatePackagesCommand()
         {
             var command = new Command("packages", "Get a list of packages that need upgrading.")
@@ -30,8 +40,9 @@ namespace NuGetPackageAnalyzer
         {
             var command = new RootCommand
             {
+                CreateDependenciesCommand(),
                 CreatePackagesCommand(),
-                CreateBindingRedirectsCommand()
+                CreateBindingRedirectsCommand(),
             };
             await command.InvokeAsync(args).ConfigureAwait(false);
         }
