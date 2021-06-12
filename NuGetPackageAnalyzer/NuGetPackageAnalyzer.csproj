@@ -5,6 +5,14 @@
         <TargetFramework>net5.0</TargetFramework>
         <PackAsTool>true</PackAsTool>
         <Version>0.1.0</Version>
+        <Title>NuGetPackageAnalyzer</Title>
+        <Authors>Brian Kohrs</Authors>
+        <Description>dotnet tool for analyzing NuGet package dependencies and suggesting fixes</Description>
+        <PackageProjectUrl>https://github.com/bkohrs/NuGetPackageAnalyzer</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/bkohrs/NuGetPackageAnalyzer/blob/main/LICENSE</PackageLicenseUrl>
+        <RepositoryUrl>https://github.com/bkohrs/NuGetPackageAnalyzer</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>dotnet tool nuget</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
