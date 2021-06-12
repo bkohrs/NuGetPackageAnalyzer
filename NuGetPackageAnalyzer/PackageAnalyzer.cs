@@ -95,10 +95,19 @@ namespace NuGetPackageAnalyzer
                             var groups =
                                 (xmlDocument.SelectNodes("//*[local-name()='dependencies']/*[local-name()='group']")
                                     ?.OfType<XmlElement>() ?? Enumerable.Empty<XmlElement>()).ToList();
-                            var frameworks = groups.Select(g => NuGetFramework.Parse(g.Attributes["targetFramework"]?.Value)).ToList();
+                            var frameworks = groups
+                                .Select(r => r.Attributes["targetFramework"]?.Value)
+                                .Where(r => !string.IsNullOrWhiteSpace(r))
+                                .Select(NuGetFramework.Parse)
+                                .ToList();
                             var effectiveFramework = frameworkReducer.GetNearest(targetFramework, frameworks);
                             var effectiveGroup = groups.FirstOrDefault(r =>
-                                NuGetFramework.Parse(r.Attributes["targetFramework"]?.Value) == effectiveFramework);
+                            {
+                                var groupFramework = r.Attributes["targetFramework"]?.Value;
+                                return !string.IsNullOrWhiteSpace(groupFramework) &&
+                                       NuGetFramework.Parse(groupFramework) == effectiveFramework;
+                            }) ?? groups.FirstOrDefault(r =>
+                                string.IsNullOrWhiteSpace(r.Attributes["targetFramework"]?.Value));
                             var referenceDependencies =
                                 effectiveGroup?.SelectNodes("*[local-name()='dependency']")?.OfType<XmlElement>() ??
                                 Enumerable.Empty<XmlElement>();
