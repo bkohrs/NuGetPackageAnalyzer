@@ -25,7 +25,7 @@ namespace NuGetPackageAnalyzer
                 _ => throw new ArgumentOutOfRangeException(nameof(issue), issue, null)
             };
         }
-        private static NuGetPackageDependencies AnalyzePackageDependencies(string directory, string framework)
+        private static NuGetPackageDependencies AnalyzePackageDependencies(string directory, NuGetFramework framework)
         {
             var packageDependencies = new NuGetPackageDependencies();
             var projects = Directory.GetFiles(directory, "*.csproj", SearchOption.AllDirectories);
@@ -43,7 +43,7 @@ namespace NuGetPackageAnalyzer
         }
         public static void GetBindingRedirects(string directory, string framework, IConsole console)
         {
-            var packageDependencies = AnalyzePackageDependencies(directory, framework);
+            var packageDependencies = AnalyzePackageDependencies(directory, NuGetFramework.Parse(framework));
             WriteProjectIssues(console, packageDependencies.GetProjectIssues().ToList());
             var packageUpgrades = packageDependencies.GetBindingRedirects().ToList();
             if (packageUpgrades.Count > 0)
@@ -62,9 +62,8 @@ namespace NuGetPackageAnalyzer
             else
                 console.Out.WriteLine("No needed binding redirects found.");
         }
-        private static void GetNonSdkDependencies(string directory, string project, string framework, NuGetPackageDependencies dependencies)
+        private static void GetNonSdkDependencies(string directory, string project, NuGetFramework framework, NuGetPackageDependencies dependencies)
         {
-            var targetFramework = NuGetFramework.Parse(framework);
             var frameworkReducer = new FrameworkReducer();
             var packagesConfig = Path.Combine(Path.GetDirectoryName(project) ?? string.Empty, "packages.config");
             if (File.Exists(packagesConfig))
@@ -100,7 +99,7 @@ namespace NuGetPackageAnalyzer
                                 .Where(r => !string.IsNullOrWhiteSpace(r))
                                 .Select(NuGetFramework.Parse)
                                 .ToList();
-                            var effectiveFramework = frameworkReducer.GetNearest(targetFramework, frameworks);
+                            var effectiveFramework = frameworkReducer.GetNearest(framework, frameworks);
                             var effectiveGroup = groups.FirstOrDefault(r =>
                             {
                                 var groupFramework = r.Attributes["targetFramework"]?.Value;
@@ -136,7 +135,7 @@ namespace NuGetPackageAnalyzer
         }
         public static void GetPackageDependencies(string directory, string framework, IConsole console)
         {
-            var packageDependencies = AnalyzePackageDependencies(directory, framework);
+            var packageDependencies = AnalyzePackageDependencies(directory, NuGetFramework.Parse(framework));
             WriteProjectIssues(console, packageDependencies.GetProjectIssues().ToList());
             var packageUpgrades = packageDependencies.GetPackageDependencies().ToList();
             if (packageUpgrades.Count > 0)
@@ -157,7 +156,7 @@ namespace NuGetPackageAnalyzer
         }
         public static void GetPackageUpgrades(string directory, string framework, IConsole console)
         {
-            var packageDependencies = AnalyzePackageDependencies(directory, framework);
+            var packageDependencies = AnalyzePackageDependencies(directory, NuGetFramework.Parse(framework));
             WriteProjectIssues(console, packageDependencies.GetProjectIssues().ToList());
             var packageUpgrades = packageDependencies.GetPackageUpgrades().ToList();
             if (packageUpgrades.Count > 0)
@@ -176,15 +175,26 @@ namespace NuGetPackageAnalyzer
             else
                 console.Out.WriteLine("No needed upgrades found.");
         }
-        private static void GetSdkDependencies(string project, string frameworkVersion,
+        private static void GetSdkDependencies(string project, NuGetFramework framework,
             NuGetPackageDependencies dependencies)
         {
             var assetsJson = Path.Combine(Path.GetDirectoryName(project) ?? string.Empty, @"obj\project.assets.json");
             if (File.Exists(assetsJson))
             {
                 var jObject = JObject.Parse(File.ReadAllText(assetsJson));
-                var references = jObject["targets"]?[frameworkVersion]?.OfType<JProperty>() ??
-                                 Enumerable.Empty<JProperty>();
+                var targets = jObject["targets"]?.OfType<JProperty>();
+                var effectiveTarget = targets?.FirstOrDefault(r =>
+                {
+                    try
+                    {
+                        return NuGetFramework.Parse(r.Name) == framework;
+                    }
+                    catch (Exception)
+                    {
+                        return false;
+                    }
+                });
+                var references = effectiveTarget?.Value?.OfType<JProperty>() ?? Enumerable.Empty<JProperty>();
                 foreach (var r in references)
                 {
                     var (name, versionText, _) = r.Name.Split("/");
