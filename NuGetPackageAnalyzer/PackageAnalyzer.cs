@@ -141,7 +141,7 @@ namespace NuGetPackageAnalyzer
                     foreach (var referenceDependency in referenceDependencies)
                     {
                         var referenceVersionText = referenceDependency.Value.ToString();
-                        if (Version.TryParse(referenceVersionText, out var referenceVersion))
+                        if (NuGetDependencyRangeParser.TryParse(referenceVersionText, out var referenceVersion))
                             dependencies.AddDependency(project, referenceDependency.Name, referenceVersion);
                         else
                         {
