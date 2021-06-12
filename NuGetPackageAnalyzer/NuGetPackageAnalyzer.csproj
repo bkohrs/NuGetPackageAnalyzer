@@ -9,7 +9,7 @@
         <Authors>Brian Kohrs</Authors>
         <Description>dotnet tool for analyzing NuGet package dependencies and suggesting fixes</Description>
         <PackageProjectUrl>https://github.com/bkohrs/NuGetPackageAnalyzer</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/bkohrs/NuGetPackageAnalyzer/blob/main/LICENSE</PackageLicenseUrl>
+        <PackageLicense>MIT</PackageLicense>
         <RepositoryUrl>https://github.com/bkohrs/NuGetPackageAnalyzer</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>dotnet tool nuget</PackageTags>
