@@ -114,7 +114,7 @@ namespace NuGetPackageAnalyzer
                             {
                                 var referenceDependencyName = referenceDependency.GetAttribute("id");
                                 var referenceDependencyVersionText = referenceDependency.GetAttribute("version");
-                                if (Version.TryParse(referenceDependencyVersionText, out var referenceDependencyVersion))
+                                if (NuGetDependencyRangeParser.TryParse(referenceDependencyVersionText, out var referenceDependencyVersion))
                                     dependencies.AddDependency(project, referenceDependencyName, referenceDependencyVersion);
                                 else
                                     dependencies.AddIssue(project, AnalysisIssue.InvalidVersion,
