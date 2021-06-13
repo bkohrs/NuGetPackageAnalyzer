@@ -1,10 +1,10 @@
-﻿using System;
+﻿using NuGet.Versioning;
 
 namespace NuGetPackageAnalyzer
 {
     public class ProjectNuGetReference
     {
-        public ProjectNuGetReference(string projectName, string nuGetPackageName, Version nuGetPackageVersion)
+        public ProjectNuGetReference(string projectName, string nuGetPackageName, NuGetVersion nuGetPackageVersion)
         {
             ProjectName = projectName;
             NuGetPackageName = nuGetPackageName;
@@ -13,6 +13,6 @@ namespace NuGetPackageAnalyzer
 
         public string ProjectName { get; }
         public string NuGetPackageName { get; }
-        public Version NuGetPackageVersion { get; }
+        public NuGetVersion NuGetPackageVersion { get; }
     }
 }

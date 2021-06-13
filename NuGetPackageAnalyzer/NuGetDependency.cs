@@ -1,16 +1,16 @@
-﻿using System;
+﻿using NuGet.Versioning;
 
 namespace NuGetPackageAnalyzer
 {
     public class NuGetDependency
     {
-        public NuGetDependency(string name, Version version)
+        public NuGetDependency(string name, NuGetVersion version)
         {
             Name = name;
-            VersionRange = new VersionRange(version);
+            VersionRange = new DependencyVersionRange(version);
         }
 
         public string Name { get; }
-        public VersionRange VersionRange { get; }
+        public DependencyVersionRange VersionRange { get; }
     }
 }

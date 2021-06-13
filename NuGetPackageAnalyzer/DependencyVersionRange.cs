@@ -1,19 +1,19 @@
-﻿using System;
+﻿using NuGet.Versioning;
 
 namespace NuGetPackageAnalyzer
 {
-    public class VersionRange
+    public class DependencyVersionRange
     {
-        public VersionRange(Version version)
+        public DependencyVersionRange(NuGetVersion version)
         {
             Min = version;
             Max = version;
         }
 
-        public Version Min { get; private set; }
-        public Version Max { get; private set; }
+        public NuGetVersion Min { get; private set; }
+        public NuGetVersion Max { get; private set; }
 
-        public void Include(Version version)
+        public void Include(NuGetVersion version)
         {
             if (version < Min)
                 Min = version;

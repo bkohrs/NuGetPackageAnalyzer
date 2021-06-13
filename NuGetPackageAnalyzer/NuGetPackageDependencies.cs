@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using NuGet.Versioning;
 
 namespace NuGetPackageAnalyzer
 {
@@ -11,7 +12,7 @@ namespace NuGetPackageAnalyzer
             new(StringComparer.CurrentCultureIgnoreCase);
         private readonly List<ProjectIssue> _projectIssues = new();
 
-        public void AddDependency(string projectName, string nuGetPackageName, Version nuGetPackageVersion)
+        public void AddDependency(string projectName, string nuGetPackageName, NuGetVersion nuGetPackageVersion)
         {
             AddProjectDependency(_overallDependencies, nuGetPackageName, nuGetPackageVersion);
             if (!_projectDependencies.TryGetValue(projectName, out var dependencies))
@@ -27,7 +28,7 @@ namespace NuGetPackageAnalyzer
             _projectIssues.Add(new ProjectIssue(project, issue, additionalDetails));
         }
         private void AddProjectDependency(Dictionary<string, NuGetDependency> dependencies, string nuGetPackageName,
-            Version nuGetPackageVersion)
+            NuGetVersion nuGetPackageVersion)
         {
             if (!dependencies.TryGetValue(nuGetPackageName, out var dependency))
                 dependencies[nuGetPackageName] = new NuGetDependency(nuGetPackageName, nuGetPackageVersion);

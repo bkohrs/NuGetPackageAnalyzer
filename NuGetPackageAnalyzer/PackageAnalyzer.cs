@@ -8,6 +8,7 @@ using System.Linq;
 using System.Xml;
 using Newtonsoft.Json.Linq;
 using NuGet.Frameworks;
+using NuGet.Versioning;
 
 namespace NuGetPackageAnalyzer
 {
@@ -76,7 +77,7 @@ namespace NuGetPackageAnalyzer
                 {
                     var name = package.GetAttribute("id");
                     var versionText = package.GetAttribute("version");
-                    if (Version.TryParse(versionText, out var version))
+                    if (NuGetVersion.TryParse(versionText, out var version))
                         dependencies.AddDependency(project, name, version);
                     else
                         dependencies.AddIssue(project, AnalysisIssue.InvalidVersion, $"{name}:{versionText}");
@@ -114,8 +115,8 @@ namespace NuGetPackageAnalyzer
                             {
                                 var referenceDependencyName = referenceDependency.GetAttribute("id");
                                 var referenceDependencyVersionText = referenceDependency.GetAttribute("version");
-                                if (NuGetDependencyRangeParser.TryParse(referenceDependencyVersionText, out var referenceDependencyVersion))
-                                    dependencies.AddDependency(project, referenceDependencyName, referenceDependencyVersion);
+                                if (VersionRange.TryParse(referenceDependencyVersionText, out var versionRange) && versionRange.IsMinInclusive)
+                                    dependencies.AddDependency(project, referenceDependencyName, versionRange.MinVersion);
                                 else
                                     dependencies.AddIssue(project, AnalysisIssue.InvalidVersion,
                                         $"{referenceDependencyName}:{referenceDependencyVersionText}");
@@ -198,7 +199,7 @@ namespace NuGetPackageAnalyzer
                 foreach (var r in references)
                 {
                     var (name, versionText, _) = r.Name.Split("/");
-                    if (Version.TryParse(versionText, out var version))
+                    if (NuGetVersion.TryParse(versionText, out var version))
                         dependencies.AddDependency(project, name, version);
                     else
                         dependencies.AddIssue(project, AnalysisIssue.InvalidVersion, $"{name}:{versionText}");
@@ -207,8 +208,8 @@ namespace NuGetPackageAnalyzer
                     foreach (var referenceDependency in referenceDependencies)
                     {
                         var referenceVersionText = referenceDependency.Value.ToString();
-                        if (NuGetDependencyRangeParser.TryParse(referenceVersionText, out var referenceVersion))
-                            dependencies.AddDependency(project, referenceDependency.Name, referenceVersion);
+                        if (VersionRange.TryParse(referenceVersionText, out var referenceVersion) && referenceVersion.IsMinInclusive)
+                            dependencies.AddDependency(project, referenceDependency.Name, referenceVersion.MinVersion);
                         else
                         {
                             dependencies.AddIssue(project, AnalysisIssue.InvalidVersion,
