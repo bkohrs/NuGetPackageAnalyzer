@@ -28,7 +28,7 @@ namespace NuGetPackageAnalyzer
         }
         private static Command CreatePackagesCommand()
         {
-            var command = new Command("packages", "Get a list of packages that need upgrading.")
+            var command = new Command("upgrades", "Get a list of packages that need upgrading.")
             {
                 new Argument<string>("directory", "Directory containing the projects"),
                 new Argument<string>("framework", ".NET Framework version to analyze")
